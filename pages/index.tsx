@@ -4,9 +4,10 @@ import ImageGenerator from '../components/ImageGenerator'
 import WatermarkRemover from '../components/WatermarkRemover'
 import ModelManager from '../components/ModelManager'
 import EnvironmentStatus from '../components/EnvironmentStatus'
+import GenerationHistory from '../components/GenerationHistory'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'generate' | 'remove' | 'models' | 'env'>('generate')
+  const [activeTab, setActiveTab] = useState<'generate' | 'remove' | 'models' | 'env' | 'history'>('generate')
 
   return (
     <>
@@ -34,7 +35,7 @@ export default function Home() {
                       : 'text-gray-600 hover:text-blue-500'
                   }`}
                 >
-                  AI 圖像生成
+                  🎨 AI 圖像生成
                 </button>
                 <button
                   onClick={() => setActiveTab('remove')}
@@ -44,7 +45,17 @@ export default function Home() {
                       : 'text-gray-600 hover:text-blue-500'
                   }`}
                 >
-                  去水印工具
+                  🔧 去水印工具
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all text-sm ${
+                    activeTab === 'history'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'text-gray-600 hover:text-blue-500'
+                  }`}
+                >
+                  📚 生成歷史
                 </button>
                 <button
                   onClick={() => setActiveTab('models')}
@@ -54,7 +65,7 @@ export default function Home() {
                       : 'text-gray-600 hover:text-blue-500'
                   }`}
                 >
-                  模型管理
+                  ⚙️ 模型管理
                 </button>
                 <button
                   onClick={() => setActiveTab('env')}
@@ -64,7 +75,7 @@ export default function Home() {
                       : 'text-gray-600 hover:text-blue-500'
                   }`}
                 >
-                  環境狀態
+                  📊 環境狀態
                 </button>
               </div>
             </div>
@@ -74,6 +85,8 @@ export default function Home() {
                 <ImageGenerator />
               ) : activeTab === 'remove' ? (
                 <WatermarkRemover />
+              ) : activeTab === 'history' ? (
+                <GenerationHistory />
               ) : activeTab === 'models' ? (
                 <ModelManager />
               ) : (

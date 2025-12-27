@@ -12,13 +12,13 @@ export interface AIModel {
 }
 
 export const AI_MODELS: AIModel[] = [
-  // OpenAI Models
+  // OpenAI Models (支持自定義base_url)
   {
     id: 'dall-e-3',
     name: 'DALL-E 3',
     provider: 'openai',
     type: 'text-to-image',
-    description: '最新的OpenAI圖像生成模型，高品質輸出',
+    description: '最新的OpenAI圖像生成模型，支持自定義API端點',
     maxResolution: '1024x1024',
     estimatedTime: '10-30秒',
     free: false
@@ -28,7 +28,7 @@ export const AI_MODELS: AIModel[] = [
     name: 'DALL-E 2',
     provider: 'openai',
     type: 'text-to-image',
-    description: 'OpenAI經典圖像生成模型',
+    description: 'OpenAI經典圖像生成模型，支持自定義API端點',
     maxResolution: '1024x1024',
     estimatedTime: '5-15秒',
     free: false

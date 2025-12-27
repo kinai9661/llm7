@@ -45,11 +45,18 @@ npm run init-env
 ### AI模型API密鑰
 
 #### `OPENAI_API_KEY`
-- **描述**: OpenAI API密鑰
-- **獲取**: [OpenAI API Keys](https://platform.openai.com/api-keys)
-- **格式**: `sk-...`
-- **模型**: DALL-E 2, DALL-E 3
+- **描述**: OpenAI API密鑰或兼容API的密鑰
+- **獲取**: [OpenAI API Keys](https://platform.openai.com/api-keys) 或自定義API提供商
+- **格式**: `sk-...` 或自定義格式
+- **模型**: DALL-E 2, DALL-E 3 或兼容模型
 - **費用**: 按使用量計費
+
+#### `OPENAI_BASE_URL`
+- **描述**: 自定義OpenAI兼容API的基礎URL
+- **默認值**: `https://api.openai.com/v1`
+- **示例**: `https://api.llm7.io/v1`
+- **用途**: 支持第三方OpenAI兼容API服務
+- **注意**: 可選，不設置則使用官方OpenAI API
 
 #### `REPLICATE_API_TOKEN`
 - **描述**: Replicate API令牌

@@ -8,6 +8,7 @@ export interface EnvConfig {
 
   // AI 模型 API 密鑰
   OPENAI_API_KEY?: string
+  OPENAI_BASE_URL?: string
   REPLICATE_API_TOKEN?: string
   HUGGINGFACE_API_KEY?: string
   STABILITY_API_KEY?: string
@@ -47,6 +48,7 @@ class EnvironmentManager {
 
       // AI 模型 API 密鑰
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
       REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
       HUGGINGFACE_API_KEY: process.env.HUGGINGFACE_API_KEY,
       STABILITY_API_KEY: process.env.STABILITY_API_KEY,

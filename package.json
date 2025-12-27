@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "init-env": "node scripts/init-env.js",
-    "check-env": "node scripts/check-env.js"
+    "check-env": "node scripts/check-env.js",
+    "test-api": "node test-api.js"
   },
   "dependencies": {
     "next": "^14.0.0",
@@ -22,7 +23,8 @@
     "openai": "^4.20.0",
     "replicate": "^0.25.0",
     "huggingface": "^1.5.0",
-    "stability-sdk": "^1.0.0"
+    "stability-sdk": "^1.0.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

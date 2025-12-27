@@ -28,14 +28,18 @@ class SimpleAIProviders {
         return { success: false, error: 'OpenAI API密鑰未配置' }
       }
 
-      const response = await fetch('https://api.openai.com/v1/images/generations', {
+      // 使用自定義base_url或默認OpenAI URL
+      const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+      const apiUrl = `${baseUrl}/images/generations`
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: params.model,
+          model: params.model === 'dall-e-3' ? 'dall-e-3' : 'dall-e-2',
           prompt: params.prompt,
           n: 1,
           size: `${params.width || 1024}x${params.height || 1024}`,
@@ -45,11 +49,12 @@ class SimpleAIProviders {
       })
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`API請求失敗: ${response.status} - ${errorData.error?.message || response.statusText}`)
       }
 
       const data = await response.json()
-      const imageUrl = data.data[0]?.url
+      const imageUrl = data.data?.[0]?.url
 
       if (!imageUrl) {
         return { success: false, error: '未能生成圖像' }
@@ -61,7 +66,9 @@ class SimpleAIProviders {
         metadata: {
           model: params.model,
           prompt: params.prompt,
-          generationTime: Date.now() - startTime
+          generationTime: Date.now() - startTime,
+          provider: 'openai',
+          baseUrl: baseUrl
         }
       }
     } catch (error: any) {

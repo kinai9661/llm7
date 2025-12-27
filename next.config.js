@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     serverComponentsExternalPackages: ['canvas', 'sharp']
   },
@@ -20,7 +22,11 @@ const nextConfig = {
       })
     }
     return config
-  }
+  },
+  // 確保使用 Next.js 構建
+  distDir: '.next',
+  generateEtags: false,
+  poweredByHeader: false
 }
 
 module.exports = nextConfig

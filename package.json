@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "export": "next export",
     "init-env": "node scripts/init-env.js",
     "check-env": "node scripts/check-env.js",
     "test-api": "node test-api.js"

@@ -12,11 +12,15 @@ const nextConfig = {
       },
     ],
   },
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push({
+        'canvas': 'commonjs canvas',
+        'sharp': 'commonjs sharp'
+      })
+    }
+    return config
+  }
 }
 
 module.exports = nextConfig

@@ -3,9 +3,10 @@ import Head from 'next/head'
 import ImageGenerator from '../components/ImageGenerator'
 import WatermarkRemover from '../components/WatermarkRemover'
 import ModelManager from '../components/ModelManager'
+import EnvironmentStatus from '../components/EnvironmentStatus'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'generate' | 'remove' | 'models'>('generate')
+  const [activeTab, setActiveTab] = useState<'generate' | 'remove' | 'models' | 'env'>('generate')
 
   return (
     <>
@@ -24,10 +25,10 @@ export default function Home() {
           
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-center mb-8">
-              <div className="bg-white rounded-lg p-1 shadow-md">
+              <div className="bg-white rounded-lg p-1 shadow-md flex flex-wrap">
                 <button
                   onClick={() => setActiveTab('generate')}
-                  className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  className={`px-4 py-2 rounded-md font-medium transition-all text-sm ${
                     activeTab === 'generate'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-gray-600 hover:text-blue-500'
@@ -37,7 +38,7 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setActiveTab('remove')}
-                  className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  className={`px-4 py-2 rounded-md font-medium transition-all text-sm ${
                     activeTab === 'remove'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-gray-600 hover:text-blue-500'
@@ -47,13 +48,23 @@ export default function Home() {
                 </button>
                 <button
                   onClick={() => setActiveTab('models')}
-                  className={`px-6 py-3 rounded-md font-medium transition-all ${
+                  className={`px-4 py-2 rounded-md font-medium transition-all text-sm ${
                     activeTab === 'models'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-gray-600 hover:text-blue-500'
                   }`}
                 >
                   模型管理
+                </button>
+                <button
+                  onClick={() => setActiveTab('env')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all text-sm ${
+                    activeTab === 'env'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'text-gray-600 hover:text-blue-500'
+                  }`}
+                >
+                  環境狀態
                 </button>
               </div>
             </div>
@@ -63,8 +74,10 @@ export default function Home() {
                 <ImageGenerator />
               ) : activeTab === 'remove' ? (
                 <WatermarkRemover />
-              ) : (
+              ) : activeTab === 'models' ? (
                 <ModelManager />
+              ) : (
+                <EnvironmentStatus />
               )}
             </div>
           </div>

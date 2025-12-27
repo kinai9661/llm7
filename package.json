@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "init-env": "node scripts/init-env.js",
+    "check-env": "node scripts/check-env.js"
   },
   "dependencies": {
     "next": "^14.0.0",
@@ -26,6 +28,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/multer": "^1.4.7",
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "typescript": "^5.0.0",

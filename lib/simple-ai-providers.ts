@@ -1,5 +1,4 @@
-import { createCanvas } from 'canvas'
-
+// 簡化的AI提供者實現
 export interface GenerateImageParams {
   prompt: string
   model: string
@@ -20,100 +19,38 @@ export interface GenerateImageResponse {
   }
 }
 
-class AIProviders {
-  private openai: any = null
-  private replicate: any = null
-
-  constructor() {
-    // 動態導入以避免構建時錯誤
-    this.initializeProviders()
-  }
-
-  private async initializeProviders() {
-    try {
-      // 初始化OpenAI
-      if (process.env.OPENAI_API_KEY) {
-        const { default: OpenAI } = await import('openai')
-        this.openai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY
-        })
-      }
-
-      // 初始化Replicate
-      if (process.env.REPLICATE_API_TOKEN) {
-        const { default: Replicate } = await import('replicate')
-        this.replicate = new Replicate({
-          auth: process.env.REPLICATE_API_TOKEN
-        })
-      }
-    } catch (error) {
-      console.warn('Failed to initialize AI providers:', error)
-    }
-  }
-
+class SimpleAIProviders {
   async generateWithOpenAI(params: GenerateImageParams): Promise<GenerateImageResponse> {
-    if (!this.openai) {
-      return { success: false, error: 'OpenAI API密鑰未配置' }
-    }
-
     const startTime = Date.now()
 
     try {
-      const response = await this.openai.images.generate({
-        model: params.model,
-        prompt: params.prompt,
-        n: 1,
-        size: `${params.width || 1024}x${params.height || 1024}` as any,
-        quality: 'standard',
-        response_format: 'url'
-      })
-
-      const imageUrl = response.data[0]?.url
-      if (!imageUrl) {
-        return { success: false, error: '未能生成圖像' }
+      if (!process.env.OPENAI_API_KEY) {
+        return { success: false, error: 'OpenAI API密鑰未配置' }
       }
 
-      return {
-        success: true,
-        imageUrl,
-        metadata: {
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           model: params.model,
           prompt: params.prompt,
-          generationTime: Date.now() - startTime
-        }
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || '圖像生成失敗'
-      }
-    }
-  }
+          n: 1,
+          size: `${params.width || 1024}x${params.height || 1024}`,
+          quality: 'standard',
+          response_format: 'url'
+        }),
+      })
 
-  async generateWithReplicate(params: GenerateImageParams): Promise<GenerateImageResponse> {
-    if (!this.replicate) {
-      return { success: false, error: 'Replicate API密鑰未配置' }
-    }
-
-    const startTime = Date.now()
-
-    try {
-      const modelId = this.getReplicateModelId(params.model)
-      if (!modelId) {
-        return { success: false, error: '不支持的Replicate模型' }
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`)
       }
 
-      const output = await this.replicate.run(modelId, {
-        input: {
-          prompt: params.prompt,
-          width: params.width || 1024,
-          height: params.height || 1024,
-          num_inference_steps: params.steps || 4,
-          guidance_scale: params.guidance || 7.5
-        }
-      }) as string[]
+      const data = await response.json()
+      const imageUrl = data.data[0]?.url
 
-      const imageUrl = Array.isArray(output) ? output[0] : output
       if (!imageUrl) {
         return { success: false, error: '未能生成圖像' }
       }
@@ -139,6 +76,10 @@ class AIProviders {
     const startTime = Date.now()
 
     try {
+      if (!process.env.HUGGINGFACE_API_KEY) {
+        return { success: false, error: 'Hugging Face API密鑰未配置' }
+      }
+
       const modelId = this.getHuggingFaceModelId(params.model)
       if (!modelId) {
         return { success: false, error: '不支持的HuggingFace模型' }
@@ -190,69 +131,13 @@ class AIProviders {
     }
   }
 
-  async generateWithStability(params: GenerateImageParams): Promise<GenerateImageResponse> {
-    const startTime = Date.now()
-
-    try {
-      const engineId = this.getStabilityEngineId(params.model)
-      if (!engineId) {
-        return { success: false, error: '不支持的Stability AI模型' }
-      }
-
-      const response = await fetch(
-        `https://api.stability.ai/v1/generation/${engineId}/text-to-image`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${process.env.STABILITY_API_KEY}`,
-          },
-          body: JSON.stringify({
-            text_prompts: [
-              {
-                text: params.prompt,
-                weight: 1
-              }
-            ],
-            cfg_scale: params.guidance || 7,
-            height: params.height || 512,
-            width: params.width || 512,
-            steps: params.steps || 30,
-            samples: 1,
-          }),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const responseJSON = await response.json()
-      const image = responseJSON.artifacts[0]
-      const imageUrl = `data:image/png;base64,${image.base64}`
-
-      return {
-        success: true,
-        imageUrl,
-        metadata: {
-          model: params.model,
-          prompt: params.prompt,
-          generationTime: Date.now() - startTime
-        }
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.message || 'Stability AI圖像生成失敗'
-      }
-    }
-  }
-
   async generateWithCanvas(params: GenerateImageParams): Promise<GenerateImageResponse> {
     const startTime = Date.now()
 
     try {
+      // 動態導入canvas以避免構建時錯誤
+      const { createCanvas } = await import('canvas')
+      
       const canvas = createCanvas(params.width || 512, params.height || 512)
       const ctx = canvas.getContext('2d')
 
@@ -328,7 +213,7 @@ class AIProviders {
   }
 
   private getColorPalette(baseColor: string): { primary: string; secondary: string; tertiary: string } {
-    const palettes = {
+    const palettes: Record<string, { primary: string; secondary: string; tertiary: string }> = {
       red: { primary: '#ff6b6b', secondary: '#ee5a52', tertiary: '#ff8a80' },
       blue: { primary: '#4ecdc4', secondary: '#45b7aa', tertiary: '#80deea' },
       green: { primary: '#95e1d3', secondary: '#81c784', tertiary: '#a5d6a7' },
@@ -338,7 +223,7 @@ class AIProviders {
       yellow: { primary: '#fff176', secondary: '#ffeb3b', tertiary: '#fff59d' }
     }
 
-    return palettes[baseColor as keyof typeof palettes] || palettes.blue
+    return palettes[baseColor] || palettes.blue
   }
 
   private addDynamicPatterns(ctx: CanvasRenderingContext2D, width: number, height: number, prompt: string) {
@@ -349,8 +234,6 @@ class AIProviders {
       this.drawStars(ctx, width, height)
     } else if (lowerPrompt.includes('circle') || lowerPrompt.includes('圓')) {
       this.drawCircles(ctx, width, height)
-    } else if (lowerPrompt.includes('wave') || lowerPrompt.includes('波')) {
-      this.drawWaves(ctx, width, height)
     } else {
       this.drawRandomShapes(ctx, width, height)
     }
@@ -391,21 +274,6 @@ class AIProviders {
     }
   }
 
-  private drawWaves(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
-    ctx.lineWidth = 3
-    for (let i = 0; i < 5; i++) {
-      ctx.beginPath()
-      const y = (height / 6) * (i + 1)
-      ctx.moveTo(0, y)
-      for (let x = 0; x <= width; x += 20) {
-        const waveY = y + Math.sin((x / width) * Math.PI * 4) * 20
-        ctx.lineTo(x, waveY)
-      }
-      ctx.stroke()
-    }
-  }
-
   private drawRandomShapes(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'
     for (let i = 0; i < 25; i++) {
@@ -425,29 +293,13 @@ class AIProviders {
     }
   }
 
-  private getReplicateModelId(model: string): string | null {
-    const modelMap: { [key: string]: string } = {
-      'sdxl-lightning': 'bytedance/sdxl-lightning-4step:5f24084160c9089501c1b3545d9be3c27883ae2239b6f412990e82d4a6210f8f',
-      'flux-schnell': 'black-forest-labs/flux-schnell:bf2f2b4c8e6b4b6b8b6b4b6b8b6b4b6b8b6b4b6b'
-    }
-    return modelMap[model] || null
-  }
-
   private getHuggingFaceModelId(model: string): string | null {
-    const modelMap: { [key: string]: string } = {
+    const modelMap: Record<string, string> = {
       'stable-diffusion-2-1': 'stabilityai/stable-diffusion-2-1',
       'dreamlike-anime': 'dreamlike-art/dreamlike-anime-1.0'
     }
     return modelMap[model] || null
   }
-
-  private getStabilityEngineId(model: string): string | null {
-    const engineMap: { [key: string]: string } = {
-      'stable-diffusion-xl': 'stable-diffusion-xl-1024-v1-0',
-      'stable-diffusion-v1-6': 'stable-diffusion-v1-6'
-    }
-    return engineMap[model] || null
-  }
 }
 
-export const aiProviders = new AIProviders()
+export const simpleAIProviders = new SimpleAIProviders()

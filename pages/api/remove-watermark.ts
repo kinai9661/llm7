@@ -2,13 +2,23 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import multer from 'multer'
 import sharp from 'sharp'
 import { createCanvas, loadImage } from 'canvas'
+import { withMiddleware } from '../../lib/middleware'
+import { env } from '../../lib/env'
 
 // 配置multer用於文件上傳
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: env.getConfig().MAX_FILE_SIZE,
   },
+  fileFilter: (req, file, cb) => {
+    const ext = file.originalname.split('.').pop()?.toLowerCase()
+    if (ext && env.isSupportedFormat(ext)) {
+      cb(null, true)
+    } else {
+      cb(new Error(`不支持的文件格式: ${ext}`))
+    }
+  }
 })
 
 // 禁用Next.js默認的body parser
@@ -30,12 +40,14 @@ function runMiddleware(req: any, res: any, fn: any) {
   })
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  // 檢查去水印功能是否啟用
+  if (!env.getConfig().ENABLE_WATERMARK_REMOVAL) {
+    return res.status(503).json({ error: '去水印功能已禁用' })
   }
 
   try {
@@ -45,6 +57,14 @@ export default async function handler(
     const file = (req as any).file
     if (!file) {
       return res.status(400).json({ error: '請上傳圖像文件' })
+    }
+
+    // 檢查文件大小
+    if (!env.isValidFileSize(file.size)) {
+      return res.status(413).json({ 
+        error: `文件大小超過限制 (${env.getConfig().MAX_FILE_SIZE} bytes)`,
+        maxSize: env.getConfig().MAX_FILE_SIZE
+      })
     }
 
     // 使用sharp處理圖像
@@ -108,6 +128,7 @@ export default async function handler(
     // 設置響應頭
     res.setHeader('Content-Type', 'image/png')
     res.setHeader('Content-Disposition', 'attachment; filename="watermark-removed.png"')
+    res.setHeader('X-Processing-Time', Date.now().toString())
     
     // 發送處理後的圖像
     res.send(finalBuffer)
@@ -116,3 +137,8 @@ export default async function handler(
     res.status(500).json({ error: '去水印處理失敗' })
   }
 }
+
+export default withMiddleware(handler, {
+  checkFileSize: true,
+  enableRateLimit: true
+})

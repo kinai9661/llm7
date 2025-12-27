@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { AI_MODELS, getFreeModels } from '../../lib/models'
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,61 +9,82 @@ export default async function handler(
   }
 
   try {
-    const availableModels = []
-    
-    // 檢查各個API密鑰是否配置
-    const hasOpenAI = !!process.env.OPENAI_API_KEY
-    const hasReplicate = !!process.env.REPLICATE_API_TOKEN
-    const hasHuggingFace = !!process.env.HUGGINGFACE_API_KEY
-    const hasStability = !!process.env.STABILITY_API_KEY
-
-    for (const model of AI_MODELS) {
-      let isAvailable = false
-
-      switch (model.provider) {
-        case 'openai':
-          isAvailable = hasOpenAI
-          break
-        case 'replicate':
-          isAvailable = hasReplicate
-          break
-        case 'huggingface':
-          isAvailable = hasHuggingFace
-          break
-        case 'stability':
-          isAvailable = hasStability
-          break
-        case 'local':
-          isAvailable = true // 本地模型總是可用
-          break
-        default:
-          isAvailable = false
+    // 基本的本地模型
+    const availableModels = [
+      {
+        id: 'canvas-generator',
+        name: 'Canvas生成器',
+        provider: 'local',
+        type: 'text-to-image',
+        description: '本地Canvas API生成，無需API密鑰',
+        maxResolution: '512x512',
+        estimatedTime: '1-3秒',
+        free: true
       }
+    ]
 
-      if (isAvailable) {
-        availableModels.push(model)
-      }
+    // 檢查API密鑰
+    const apiStatus = {
+      openai: !!process.env.OPENAI_API_KEY,
+      replicate: !!process.env.REPLICATE_API_TOKEN,
+      huggingface: !!process.env.HUGGINGFACE_API_KEY,
+      stability: !!process.env.STABILITY_API_KEY
     }
 
-    // 如果沒有配置任何API密鑰，至少返回免費模型
-    if (availableModels.length === 0) {
-      availableModels.push(...getFreeModels())
+    // 如果有API密鑰，添加對應模型
+    if (apiStatus.openai) {
+      availableModels.push({
+        id: 'dall-e-3',
+        name: 'DALL-E 3',
+        provider: 'openai',
+        type: 'text-to-image',
+        description: '最新的OpenAI圖像生成模型',
+        maxResolution: '1024x1024',
+        estimatedTime: '10-30秒',
+        free: false
+      })
+    }
+
+    if (apiStatus.huggingface) {
+      availableModels.push({
+        id: 'stable-diffusion-2-1',
+        name: 'Stable Diffusion 2.1',
+        provider: 'huggingface',
+        type: 'text-to-image',
+        description: '免費的Stable Diffusion模型',
+        maxResolution: '768x768',
+        estimatedTime: '30-60秒',
+        free: true
+      })
     }
 
     res.status(200).json({
       availableModels,
-      apiStatus: {
-        openai: hasOpenAI,
-        replicate: hasReplicate,
-        huggingface: hasHuggingFace,
-        stability: hasStability
-      }
+      apiStatus,
+      config: {
+        maxFileSize: 10485760,
+        supportedFormats: ['png', 'jpg', 'jpeg', 'webp'],
+        rateLimit: {
+          requests: 10,
+          window: 60000
+        }
+      },
+      environment: process.env.NODE_ENV || 'development'
     })
   } catch (error) {
     console.error('Check models error:', error)
     res.status(500).json({ 
       error: '檢查模型失敗',
-      availableModels: getFreeModels()
+      availableModels: [{
+        id: 'canvas-generator',
+        name: 'Canvas生成器',
+        provider: 'local',
+        type: 'text-to-image',
+        description: '本地Canvas API生成',
+        maxResolution: '512x512',
+        estimatedTime: '1-3秒',
+        free: true
+      }]
     })
   }
 }

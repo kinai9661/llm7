@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { aiProviders } from '../../lib/ai-providers'
-import { getModelById } from '../../lib/models'
+import { generateCanvasImage } from '../../lib/canvas-generator'
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,46 +10,14 @@ export default async function handler(
   }
 
   try {
-    const { prompt, model = 'canvas-generator', width = 512, height = 512, steps = 20, guidance = 7.5 } = req.body
+    const { prompt, width = 512, height = 512 } = req.body
 
     if (!prompt) {
       return res.status(400).json({ error: '請提供圖像描述' })
     }
 
-    const modelInfo = getModelById(model)
-    if (!modelInfo) {
-      return res.status(400).json({ error: '不支持的模型' })
-    }
-
-    const params = {
-      prompt,
-      model,
-      width,
-      height,
-      steps,
-      guidance
-    }
-
-    let result
-
-    switch (modelInfo.provider) {
-      case 'openai':
-        result = await aiProviders.generateWithOpenAI(params)
-        break
-      case 'replicate':
-        result = await aiProviders.generateWithReplicate(params)
-        break
-      case 'huggingface':
-        result = await aiProviders.generateWithHuggingFace(params)
-        break
-      case 'stability':
-        result = await aiProviders.generateWithStability(params)
-        break
-      case 'local':
-      default:
-        result = await aiProviders.generateWithCanvas(params)
-        break
-    }
+    const startTime = Date.now()
+    const result = await generateCanvasImage(prompt, width, height)
 
     if (!result.success) {
       return res.status(500).json({ error: result.error })
@@ -58,7 +25,12 @@ export default async function handler(
 
     res.status(200).json({ 
       imageUrl: result.imageUrl,
-      metadata: result.metadata
+      metadata: {
+        model: 'canvas-generator',
+        prompt: prompt,
+        generationTime: Date.now() - startTime,
+        provider: 'local'
+      }
     })
   } catch (error) {
     console.error('Image generation error:', error)
